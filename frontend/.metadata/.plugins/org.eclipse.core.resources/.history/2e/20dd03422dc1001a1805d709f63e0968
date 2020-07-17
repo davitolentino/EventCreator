@@ -1,0 +1,246 @@
+package controll;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.json.JSONObject;
+
+@WebServlet("/process")
+public class Processa extends HttpServlet{
+	private static final long serialVersionUID = 1L;
+
+	private String action;
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		PrintWriter out = resp.getWriter();
+		action = req.getParameter("action");
+		String urlIP = "177.11.40.243";
+		
+		if(action != null) {
+			
+			//cadAll
+			if(action.equals("cadall")) {
+				URL url = new URL("http://"+urlIP+":3516/cadall"); 
+				
+				String nome = req.getParameter("nome");
+				String cpf = req.getParameter("cpf");
+				String senha = req.getParameter("senha");
+				String confirmarsenha = req.getParameter("confirmarsenha");
+				String telefone = req.getParameter("telefone");
+				String logradouro = req.getParameter("logradouro");
+				String numero = req.getParameter("numero");
+				String bairro = req.getParameter("bairro");
+				String complemento = req.getParameter("complemento");
+				String cidade = req.getParameter("cidade");
+				String estado = req.getParameter("estado");
+				
+				if(senha == confirmarsenha) {
+					//CPF
+					String cpfNew = cpf.replace(".", "");
+					String cpfNew1 = cpfNew.replace("-", "");
+					
+					String[] cpfMult = cpfNew1.split("");
+					int soma = 0;
+					
+					for(int i = 0;  i<11; i++){
+					    soma = soma + Integer.parseInt(cpfMult[i]);
+					}
+					//---------------------------------------------
+					
+					//Telefone
+					String tel1 = telefone.replace("(", "");
+					String tel2 = tel1.replace(")", "");
+					String tel3 = tel2.replace("-", "");
+					String tel4 = tel3.replace(" ", "");
+					//---------------------------------------
+					
+					if((soma == 00) || (soma == 11) || (soma == 22) || (soma == 33) || (soma == 44) || (soma == 55) || (soma == 66) || (soma == 77) || (soma == 88) || (soma == 99)){
+						String jsonInputString = "{\"nome\": \""+nome+"\","
+								+ "\"cpf\": \""+cpfNew1+"\","
+								+ "\"senha\": \""+senha+"\","
+								+ "\"telefone\": \""+tel4+"\","
+								+ "\"logradouro\": \""+logradouro+"\","
+								+ "\"numero\": \""+numero+"\","
+								+ "\"bairro\": \""+bairro+"\","
+								+ "\"complemento\": \""+complemento+"\","
+								+ "\"cidade\": \""+cidade+"\","
+								+ "\"estado\": \""+estado+"\"}";
+						
+						HttpURLConnection con = (HttpURLConnection) url.openConnection();
+							
+						//Essas propriedades
+						con.setRequestMethod("POST");
+			            con.setConnectTimeout(5000);
+			            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+			            con.setDoInput(true);
+						con.setDoOutput(true);
+			            //--------------------------
+							
+						String parametros = jsonInputString.toString();
+	
+						//Essas propriedades
+			            OutputStream os = con.getOutputStream();
+			            os.write(parametros.getBytes("UTF-8"));
+			            os.close();
+			            //---------------
+						
+						BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+						
+						String apnd = "", linha = "";
+							
+						while((linha = br.readLine()) != null) apnd += linha;
+						
+						JSONObject ob = new JSONObject(apnd);
+						
+						if(ob.has("status")) {
+							String teste = ob.getString("status");
+							if(teste != null) {
+								RequestDispatcher dd = req.getRequestDispatcher("cadastroDesktop.jsp?Wrong=wrong");
+								dd.forward(req, resp);
+							}
+						}else {
+							resp.sendRedirect("login.jsp");
+						}
+					}else {
+						System.out.println("CPF não existe.");
+					}
+				}else {
+					System.out.println("Senha incorreta.");
+				}
+			}
+			
+			//auth
+			if(action.equals("auth")) {
+				URL url = new URL("http://"+urlIP+":3516/auth");
+				
+				String cpf = req.getParameter("cpf");
+				String senha = req.getParameter("senha");
+				
+				String jsonInputString = "{\"cpf\": \""+cpf+"\","
+										+ "\"senha\": "+senha+"}";
+				
+				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+				
+				//Essas propriedades
+				con.setRequestMethod("POST");
+	            con.setConnectTimeout(5000);
+	            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+	            con.setDoInput(true);
+				con.setDoOutput(true);
+	            //--------------------------
+					
+				String parametros = jsonInputString.toString();
+
+				//Essas propriedades
+	            OutputStream os = con.getOutputStream();
+	            os.write(parametros.getBytes("UTF-8"));
+	            os.close();
+	            //---------------
+				
+				BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				
+				String apnd = "", linha = "";
+					
+				while((linha = br.readLine()) != null) apnd += linha;
+				System.out.println(apnd);
+				
+				String log = req.getParameter("log");
+				
+				JSONObject ob = new JSONObject(apnd);
+				
+				System.out.println(apnd);
+				
+				if(log.equals("true")) {
+					if(ob.getBoolean("auth") == true) {
+						HttpSession hs = req.getSession();
+						hs.setAttribute("user", apnd);
+						resp.sendRedirect("homepos.jsp");
+					}else {
+						resp.sendRedirect("login.jsp");
+					}
+				}else{
+					HttpSession hs = req.getSession();
+					hs.invalidate();
+					resp.sendRedirect("home.jsp");
+				}
+			}
+			
+			//cadEvent
+			if(action.equals("cadEvent")) {
+				URL url = new URL("http://"+urlIP+":3516/cadEvent"); 
+				
+				String rua = req.getParameter("rua");
+				String numero = req.getParameter("numero");
+				String complemento = req.getParameter("complemento");
+				String bairro = req.getParameter("bairro");
+				String cidade = req.getParameter("cidade");
+				String estado = req.getParameter("estado");
+				
+				String modalidade = req.getParameter("modalidade");
+				String datainicio = req.getParameter("datainicio");
+				String datafinal = req.getParameter("datafinal");
+				String horaevento = req.getParameter("horaevento");
+				String id_org = req.getParameter("id_org");
+				String qtdParticipantes = req.getParameter("qtdParticipantes");
+				
+				String[] datainicio1 = datainicio.split("/");
+				String datinfinal = datainicio1[2]+""+datainicio1[1]+""+datainicio1[0];
+				
+				String[] datafinal1 = datafinal.split("/");
+				String datfinal = datafinal1[2]+""+datafinal1[1]+""+datafinal1[0];
+				
+				String jsonInputString = "{\"rua\": \""+rua+"\","
+						+ "\"numero\": \""+numero+"\","
+						+ "\"complemento\": \""+complemento+"\","
+						+ "\"bairro\": \""+bairro+"\","
+						+ "\"cidade\": \""+cidade+"\","
+						+ "\"estado\": \""+estado+"\","
+						+ "\"modalidade\": \""+modalidade+"\","
+						+ "\"datainicio\": \""+datinfinal+"\","
+						+ "\"datafinal\": \""+datfinal+"\","
+						+ "\"horaevento\": \""+horaevento+"\","
+						+ "\"id_org\": \""+id_org+"\","
+						+ "\"qtdParticipantes\": "+qtdParticipantes+"}";
+				
+				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+					
+				//Essas propriedades
+				con.setRequestMethod("POST");
+	            con.setConnectTimeout(5000);
+	            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+	            con.setDoInput(true);
+				con.setDoOutput(true);
+	            //--------------------------
+				
+				String parametros = jsonInputString.toString();
+				//Essas propriedades
+	            OutputStream os = con.getOutputStream();
+	            os.write(parametros.getBytes("UTF-8"));
+	            os.close();
+	            //---------------
+				
+				BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				
+				String apnd = "", linha = "";
+					
+				while((linha = br.readLine()) != null) apnd += linha;
+				resp.sendRedirect("partEvent.jsp");
+			}
+		}
+	}
+}
