@@ -96,8 +96,8 @@ CREATE trigger tr_add_point_lut_ins BEFORE INSERT ON matches for each ROW UPDATE
 
 CREATE trigger tr_add_point_fut_ins BEFORE INSERT ON matches for each ROW UPDATE team set wins = wins+1 WHERE modalidade = "FUTEBOL" AND id_time = new.resultado AND new.state = false;
 
-INSERT INTO LOGIN VALUES("45523007846", "123456"),
-("10644672021", "123456"),
+INSERT INTO LOGIN VALUES("5435343", "123456"),
+("534534", "123456"),
 ("80908578091", "123456"),
 ("16178431058", "123456"),
 ("87082401086", "123456"),
